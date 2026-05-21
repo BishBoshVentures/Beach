@@ -1,0 +1,7 @@
+packages:
+  - 'app'
+  - 'marketing'
+
+allowBuilds:
+  '@sentry/cli': true
+  unrs-resolver: true
