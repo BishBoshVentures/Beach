@@ -28,7 +28,6 @@ jobs:
 
       - name: Lint
         run: pnpm --filter '*' lint
-        continue-on-error: true
 
       - name: Type check
         run: |
