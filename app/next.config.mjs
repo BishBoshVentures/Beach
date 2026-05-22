@@ -8,4 +8,3 @@ export default withSentryConfig(nextConfig, {
   project: "beach",
   silent: !process.env.CI,
 });
-

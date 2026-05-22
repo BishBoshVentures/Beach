@@ -1,11 +1,16 @@
 {
   "name": "beach-events",
+  "version": "1.0.0",
   "private": true,
-  "scripts": {
-    "build": "cd app && npm install && npm run build",
-    "start": "cd app && npm start"
-  },
+  "packageManager": "pnpm@10.32.0",
   "engines": {
     "node": "20.x"
+  },
+  "scripts": {
+    "dev:app": "pnpm --filter @beach-events/app dev",
+    "dev:marketing": "pnpm --filter @beach-events/marketing dev",
+    "build:app": "pnpm --filter @beach-events/app build",
+    "build:marketing": "pnpm --filter @beach-events/marketing build",
+    "lint": "pnpm --filter '*' lint"
   }
 }
