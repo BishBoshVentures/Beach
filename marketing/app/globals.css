@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-teal: #0a7d8c;
+  --color-brand-teal-dark: #076d7a;
+  --color-brand-teal-light: #0c8f9f;
+  --color-brand-black: #0a0a0a;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
 
 :root {
   --brand-teal: #0a7d8c;
@@ -40,7 +46,6 @@ body {
 .pill {
   @apply inline-block px-4 py-1.5 text-xs tracking-widest uppercase border border-white/20 rounded-full text-white/70;
 }
-
 
 /* Focus styles */
 input:focus,
