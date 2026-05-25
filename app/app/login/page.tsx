@@ -1,22 +1,20 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthCard from "@/components/AuthCard";
 import { createClient } from "@/lib/supabase";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (searchParams.get("error") === "not_authorised") {
-      setError("You are not authorised to access this application.");
-    }
-  }, [searchParams]);
+  const [error, setError] = useState(
+    searchParams.get("error") === "not_authorised"
+      ? "You are not authorised to access this application."
+      : ""
+  );
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
