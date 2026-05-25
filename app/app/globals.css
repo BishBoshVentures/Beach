@@ -1,6 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-teal: #0a7d8c;
+  --color-brand-teal-dark: #076d7a;
+  --color-brand-teal-light: #0c8f9f;
+  --color-brand-black: #0a0a0a;
+  --color-brand-bg: #f5f4ee;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
 
 body {
   -webkit-font-smoothing: antialiased;

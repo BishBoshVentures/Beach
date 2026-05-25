@@ -1,7 +1,7 @@
 import { createServerComponentClient } from "@/lib/supabase-server";
 
 export default async function DashboardPage() {
-  const supabase = createServerComponentClient();
+  const supabase = await createServerComponentClient();
 
   const {
     data: { user },

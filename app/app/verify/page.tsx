@@ -7,7 +7,11 @@ import { createClient } from "@/lib/supabase";
 
 export default function VerifyPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [email, setEmail] = useState("");
+  const [email] = useState(() =>
+    typeof window !== "undefined"
+      ? sessionStorage.getItem("otp_email") ?? ""
+      : ""
+  );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -16,14 +20,12 @@ export default function VerifyPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("otp_email");
-    if (!stored) {
+    if (!email) {
       router.push("/login");
       return;
     }
-    setEmail(stored);
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
-  }, [router]);
+  }, [email, router]);
 
   const handleChange = (index: number, value: string) => {
     if (value && !/^\d$/.test(value)) return;
