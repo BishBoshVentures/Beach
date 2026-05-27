@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { createServerComponentClient } from "@/lib/supabase-server";
+import { currentUser } from "@clerk/nextjs/server";
+import { getDb } from "@/lib/db";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 
@@ -8,38 +9,35 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServerComponentClient();
+  const user = await currentUser();
+  const email = user?.primaryEmailAddress?.emailAddress;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email) {
+  if (!email) {
     redirect("/login");
   }
 
-  // Get user name from allowed_users
-  const { data: allowedUser, error: lookupError } = await supabase
-    .from("allowed_users")
-    .select("name")
-    .eq("email", user.email)
-    .single();
+  const sql = getDb();
+  const rows = (await sql`
+    SELECT name FROM allowed_users WHERE email = ${email} LIMIT 1
+  `) as { name: string | null }[];
 
-  if (lookupError || !allowedUser) {
+  if (rows.length === 0) {
+    // Authenticated with Clerk but not in our allowlist —
+    // /login page will show the not_authorised message; user can sign out from there.
     redirect("/login?error=not_authorised");
   }
 
-  const name = allowedUser.name || user.email.split("@")[0];
+  const name = rows[0].name || email.split("@")[0];
   const initials = name
     .split(" ")
-    .map((n: string) => n[0])
+    .map((n) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <Sidebar userEmail={user.email} />
+      <Sidebar userEmail={email} />
       <div className="lg:ml-60">
         <Header title="Dashboard" userInitials={initials} />
         <main className="p-4 sm:p-8">{children}</main>

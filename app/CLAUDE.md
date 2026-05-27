@@ -1,16 +1,21 @@
-## Database & Migrations
+## App workspace
 
-This project uses Supabase with the Supabase CLI for database management.
+Internal Beach dashboard. Auth via Clerk, data via Neon (`@neondatabase/serverless`).
 
-**Never use DATABASE_URL or any ORM migration tool (Drizzle, Prisma etc).**
+See the root `CLAUDE.md` for the database + auth overview that applies to both workspaces.
 
-When making schema changes:
-1. Create a new migration file in `supabase/migrations/` following the naming pattern `<timestamp>_description.sql` — use the current date and time for the timestamp e.g. `20260318120000_add_user_column.sql`
-2. Write the SQL using standard PostgreSQL syntax
-3. Use `IF NOT EXISTS` and `IF EXISTS` guards wherever possible to make migrations safe to run multiple times
-4. Remind the user to run `supabase db push` when done to apply the migration to the database
+## Local development
 
-Do not push to Git or run any Git commands related to migrations — the user handles all Git workflow including branches and PRs.
+```bash
+cp .env.local.example .env.local
+# Fill in DATABASE_URL, CLERK_SECRET_KEY, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+pnpm install
+pnpm dev
+```
 
-## TODO
-- When staging database is created, add staging and production refs here
+## Key files
+
+- `middleware.ts` — Clerk middleware; `/login*` and `/api/webhook*` are public, everything else requires a session
+- `app/login/page.tsx` — Single-page login that handles both email entry and OTP verification using Clerk's `useSignIn` / `useSignUp` hooks. Falls back to sign-up if Clerk doesn't know the email yet (the `allowed_users` table is the real gate)
+- `app/dashboard/layout.tsx` — Looks up the signed-in user's email in `allowed_users`; if absent, redirects to `/login?error=not_authorised`
+- `lib/db.ts` — Lazy-initialised Neon HTTP client; `getDb()` returns the tagged-template SQL function

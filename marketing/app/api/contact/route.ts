@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { createServiceClient } from "@/lib/supabase";
+import { getDb } from "@/lib/db";
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
@@ -19,7 +19,6 @@ export async function POST(request: Request) {
   try {
     const body: ContactPayload = await request.json();
 
-    // Validate required fields
     if (!body.fullName?.trim() || !body.email?.trim()) {
       return NextResponse.json(
         { error: "Name and email are required" },
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
       return NextResponse.json(
         { error: "Invalid email address" },
@@ -35,32 +33,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Write to Supabase
-    let supabase;
+    const sql = getDb();
     try {
-      supabase = createServiceClient();
-    } catch (envError) {
-      console.error("Supabase config error:", envError);
+      await sql`
+        INSERT INTO enquiry_submissions (full_name, email, phone, project_type, budget, message, source)
+        VALUES (
+          ${body.fullName.trim()},
+          ${body.email.trim()},
+          ${body.phone?.trim() || null},
+          ${body.projectType || null},
+          ${body.budget || null},
+          ${body.message?.trim() || null},
+          'holding-page'
+        )
+      `;
+    } catch (dbErr: unknown) {
+      const e = dbErr as { message?: string; code?: string };
+      console.error("enquiry_insert_error", { code: e?.code, message: e?.message });
       return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      );
-    }
-
-    const { error: dbError } = await supabase.from("enquiry_submissions").insert({
-      full_name: body.fullName.trim(),
-      email: body.email.trim(),
-      phone: body.phone?.trim() || null,
-      project_type: body.projectType || null,
-      budget: body.budget || null,
-      message: body.message?.trim() || null,
-      source: "holding-page",
-    });
-
-    if (dbError) {
-      console.error("Supabase insert error:", dbError.message, dbError.code, dbError.details);
-      return NextResponse.json(
-        { error: `Failed to save enquiry: ${dbError.message}` },
+        { error: "Failed to save enquiry" },
         { status: 500 }
       );
     }

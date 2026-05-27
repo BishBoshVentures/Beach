@@ -9,9 +9,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.24.0",
+    "@neondatabase/serverless": "^1.1.0",
     "@sentry/nextjs": "^10.53.1",
-    "@supabase/ssr": "^0.5.1",
-    "@supabase/supabase-js": "^2.45.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
