@@ -1,58 +1,34 @@
-import { createServerClient } from "@supabase/ssr";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
+const isPublicRoute = createRouteMatcher(["/login(.*)", "/api/webhook(.*)"]);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+export default clerkMiddleware(async (auth, request) => {
+  const { userId } = await auth();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Protect /dashboard routes
-  if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Redirect authenticated users away from login/verify
+  // Authenticated users hitting /login → bounce to dashboard.
+  // Exception: when /login is showing the "not authorised" error, let it
+  // render so the user can see the message and sign out — otherwise the
+  // dashboard layout redirects them back here and we loop.
   if (
-    user &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/verify")
+    userId &&
+    request.nextUrl.pathname.startsWith("/login") &&
+    request.nextUrl.searchParams.get("error") !== "not_authorised"
   ) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return response;
-}
+  // Unauthenticated users hitting protected routes → bounce to /login
+  if (!userId && !isPublicRoute(request)) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login", "/verify"],
+  matcher: [
+    // Skip Next internals and all static files unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
 };

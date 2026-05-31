@@ -1,20 +1,16 @@
-import { createServerComponentClient } from "@/lib/supabase-server";
+import { currentUser } from "@clerk/nextjs/server";
+import { getDb } from "@/lib/db";
 
 export default async function DashboardPage() {
-  const supabase = await createServerComponentClient();
+  const user = await currentUser();
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sql = getDb();
+  const rows = (await sql`
+    SELECT name FROM allowed_users WHERE email = ${email} LIMIT 1
+  `) as { name: string | null }[];
 
-  // Get first name from allowed_users
-  const { data: allowedUser } = await supabase
-    .from("allowed_users")
-    .select("name")
-    .eq("email", user?.email ?? "")
-    .maybeSingle();
-
-  const firstName = allowedUser?.name?.split(" ")[0] || "there";
+  const firstName = rows[0]?.name?.split(" ")[0] || "there";
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">

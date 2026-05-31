@@ -1,10 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { useState } from "react";
 
 const navItems = [
@@ -56,12 +55,12 @@ interface SidebarProps {
 export default function Sidebar({ userEmail }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useClerk();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
+      await signOut();
     } catch {
       // Continue to login even if signOut fails
     }
