@@ -57,6 +57,29 @@ function LoginForm() {
     if (!signInLoaded || !signUpLoaded) return;
     setLoading(true);
 
+    // Check the allowlist before triggering Clerk. Otherwise anyone can
+    // request an OTP code and we just block them at the dashboard layout
+    // after they've verified — confusing UX.
+    try {
+      const res = await fetch("/api/auth/check-allowed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const { allowed } = (await res.json()) as { allowed: boolean };
+      if (!allowed) {
+        setError(
+          "This email isn't recognised. If you think you should have access, please get in touch."
+        );
+        setLoading(false);
+        return;
+      }
+    } catch {
+      setError("Couldn't verify access right now. Please try again.");
+      setLoading(false);
+      return;
+    }
+
     try {
       // Try sign-in first
       const attempt = await signIn.create({
