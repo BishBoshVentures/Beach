@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useClerk, useAuth } from "@clerk/nextjs";
 import AuthCard from "@/components/AuthCard";
 
 type Stage = "email" | "code";
@@ -13,20 +13,31 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const { isLoaded: signInLoaded, signIn, setActive: setActiveSignIn } = useSignIn();
   const { isLoaded: signUpLoaded, signUp, setActive: setActiveSignUp } = useSignUp();
+  const { signOut } = useClerk();
+  const { isSignedIn } = useAuth();
+
+  const notAuthorised = searchParams.get("error") === "not_authorised";
 
   const [stage, setStage] = useState<Stage>("email");
   const [mode, setMode] = useState<Mode>("sign_in");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState(
-    searchParams.get("error") === "not_authorised"
-      ? "You are not authorised to access this application."
-      : ""
+    notAuthorised ? "You are not authorised to access this application." : ""
   );
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // If we landed here as a not-authorised user, sign out the stale Clerk
+  // session so they can try a different email (and so middleware stops
+  // treating them as authenticated).
+  useEffect(() => {
+    if (notAuthorised && isSignedIn) {
+      signOut().catch(() => {});
+    }
+  }, [notAuthorised, isSignedIn, signOut]);
 
   useEffect(() => {
     if (stage === "code") {
