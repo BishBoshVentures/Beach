@@ -29,3 +29,6 @@ next-env.d.ts
 
 # claude code
 .claude/
+
+# MCP server config (contains secret keys)
+.mcp.json
